@@ -76,9 +76,13 @@
             langInitBFS: (ht, nodo) => {
               nodo.precalc.label = nodo.data.name;
             },
-            interaction: {
-              λbounds: [0.4, 0.8]
-            }
+           interaction: {
+  λbounds: [0.4, 0.8],
+  onNodeClick: (n) => {
+    arbol.api.gotoNode(n)
+      .then(() => arbol.drawDetailFrame());
+  }
+}
           }
         );
 
