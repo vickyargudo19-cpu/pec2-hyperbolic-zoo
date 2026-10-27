@@ -1,0 +1,97 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Hyperbolic Tree - Zoo</title>
+
+  <link rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/d3-hypertree@1.1.0/dist/d3-hypertree-light.css">
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 25px;
+    }
+    #arbol {
+      width: 100%;
+      height: 650px;
+    }
+  </style>
+
+  <script src="https://cdn.jsdelivr.net/npm/d3-hypertree@1.1.0/dist/d3-hypertree.min.js"></script>
+</head>
+
+<body>
+  <h1>Clasificación de animales del conjunto Zoo</h1>
+  <p>Árbol hiperbólico de vertebrados e invertebrados</p>
+
+  <div id="arbol"></div>
+
+  <p>Fuente: UCI Machine Learning Repository - Zoo Dataset.</p>
+
+  <script>
+    fetch("Zoo_Arbol..csv")
+      .then(respuesta => respuesta.text())
+      .then(texto => {
+        const filas = texto.trim().split(/\r?\n/).slice(1);
+
+        const raiz = {
+          name: "Animales",
+          children: []
+        };
+
+        const grupos = new Map();
+        const subgrupos = new Map();
+
+        filas.forEach(fila => {
+          const [general, tipo, animal] =
+            fila.split(",").map(valor => valor.trim());
+
+          if (!general || !tipo || !animal) return;
+
+          if (!grupos.has(general)) {
+            const nodo = { name: general, children: [] };
+            grupos.set(general, nodo);
+            raiz.children.push(nodo);
+          }
+
+          const clave = general + "|" + tipo;
+
+          if (!subgrupos.has(clave)) {
+            const nodo = { name: tipo, children: [] };
+            subgrupos.set(clave, nodo);
+            grupos.get(general).children.push(nodo);
+          }
+
+          subgrupos.get(clave).children.push({ name: animal });
+        });
+
+        const arbol = new hyt.Hypertree(
+          { parent: document.getElementById("arbol") },
+          {
+            dataloader: ok => ok(raiz),
+            langInitBFS: (ht, nodo) => {
+              nodo.precalc.label = nodo.data.name;
+            },
+            interaction: {
+              λbounds: [0.4, 0.8]
+            }
+          }
+        );
+
+        arbol.initPromise
+          .then(() => new Promise((ok, error) =>
+            arbol.animateUp(ok, error)))
+          .then(() => arbol.drawDetailFrame());
+      })
+      .catch(error => {
+        document.getElementById("arbol").textContent =
+          "No se pudieron cargar los datos.";
+        console.error(error);
+      });
+  </script>
+</body>
+</html>
